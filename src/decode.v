@@ -66,9 +66,16 @@ module decode(
     wire [4:0] rd;
     wire [2:0] fun3;
     wire [6:0] fun7;
-    parameter LUI = 7'b0110111,AUIPC = 7'b0010111,JAL = 7'b1101111,JALR = 7'b1100111,
-    B_TYPE = 7'b1100011,LI_TYPE = 7'b0000011,S_TYPE = 7'b0100011,AI_TYPE = 7'b0010011,R_TYPE = 7'b0110011;
-
+    parameter LUI     = 7'b0110111,
+              AUIPC   = 7'b0010111,
+              JAL     = 7'b1101111,
+              JALR    = 7'b1100111,
+              B_TYPE  = 7'b1100011,
+              LI_TYPE = 7'b0000011,
+              S_TYPE  = 7'b0100011,
+              AI_TYPE = 7'b0010011,
+              R_TYPE  = 7'b0110011;
+              
     assign opcode = in_fetcher_instr[`OPCODE_WIDTH];
     assign fun3 = in_fetcher_instr[14:12];
     assign fun7 = in_fetcher_instr[24:20];
@@ -118,27 +125,143 @@ module decode(
         out_slb_tag1 <= `ZERO_TAG_ROB;
         out_slb_tag2 <= `ZERO_TAG_ROB;
 
-        if(rst == `FALSE && rdy == `TRUE) begin
+        if(rst == `FALSE && rdy == `TRUE) begin 
             case (opcode)
-                LUI : begin
+                LUI:begin
+                  out_rob_op = `LUI;
+                  out_rob_destination = {27'b0,rd[4:0]};
+                  out_rs_rob_tag = in_rob_freetag;
+                  out_rs_op = `LUI;
+                  out_rs_imm = {in_fetcher_instr[31:12],12'b0};
+                  out_reg_destination = rd;
                 end
-                AUIPC : begin
+                AUIPC:begin
+                  out_rob_op = `AUIPC;
+                  out_rob_destination = {27'b0,rd[4:0]};
+                  out_rs_rob_tag = in_rob_freetag;
+                  out_rs_op = `AUIPC;
+                  out_rs_imm = {in_fetcher_instr[31:12],12'b0};
+                  out_reg_destination = rd;
                 end
-                JAL : begin
+                JAL:begin 
+                    out_rob_op = `JAL;
+                    out_rob_destination = {27'b0,rd[4:0]};
+                    out_rs_rob_tag = in_rob_freetag;
+                    out_rs_op = `JAL;
+                    out_reg_destination = rd;
                 end
-                JALR : begin
+                JALR:begin 
+                    out_rob_op = `JALR;
+                    out_rob_destination = {27'b0,rd[4:0]};
+                    out_rs_rob_tag = in_rob_freetag;
+                    out_rs_op = `JALR;
+                    out_rs_value1 = value1;
+                    out_rs_tag1 = tag1;
+                    out_rs_imm = {{21{in_fetcher_instr[31]}},in_fetcher_instr[30:20]};
+                    out_reg_destination = rd;
                 end
-                B_TYPE : begin
+                B_TYPE:begin 
+                    out_rs_rob_tag = in_rob_freetag;
+                    out_rs_value1 = value1;
+                    out_rs_tag1 = tag1;
+                    out_rs_value2 = value2;
+                    out_rs_tag2 = tag2;
+                    out_rs_imm = {{20{in_fetcher_instr[31]}},in_fetcher_instr[7],in_fetcher_instr[30:25],in_fetcher_instr[11:8], 1'b0};
+                    case(funct3) 
+                        3'b000:begin    out_rs_op = `BEQ;     out_rob_op = `BEQ; end
+                        3'b001:begin    out_rs_op = `BNE;     out_rob_op = `BNE; end
+                        3'b100:begin    out_rs_op = `BLT;     out_rob_op = `BLT; end
+                        3'b101:begin    out_rs_op = `BGE;     out_rob_op = `BGE; end
+                        3'b110:begin    out_rs_op = `BLTU;    out_rob_op = `BLTU; end
+                        3'b111:begin    out_rs_op = `BGEU;    out_rob_op = `BGEU; end
+                    endcase
                 end
-                LI_TYPE : begin
+                LI_TYPE:begin 
+                    out_rob_destination = {27'b0,rd[4:0]};
+                    out_lsb_rob_tag = in_rob_freetag;
+                    out_lsb_value1 = value1;
+                    out_lsb_tag1 = tag1;
+                    out_lsb_imm = {{21{in_fetcher_instr[31]}},in_fetcher_instr[30:20]};
+                    out_reg_destination = rd;
+                    case(funct3) 
+                        3'b000:begin    out_lsb_op = `LB;     out_rob_op = `LB; end
+                        3'b001:begin    out_lsb_op = `LH;     out_rob_op = `LH; end
+                        3'b010:begin    out_lsb_op = `LW;     out_rob_op = `LW; end
+                        3'b100:begin    out_lsb_op = `LBU;    out_rob_op = `LBU; end
+                        3'b101:begin    out_lsb_op = `LHU;    out_rob_op = `LHU; end
+                    endcase
                 end
-                S_TYPE : begin
+                S_TYPE:begin
+                    out_lsb_rob_tag = in_rob_freetag;
+                    out_lsb_value1 = value1;
+                    out_lsb_tag1 = tag1;
+                    out_lsb_value2 = value2;
+                    out_lsb_tag2 = tag2;
+                    out_lsb_imm = {{21{in_fetcher_instr[31]}},in_fetcher_instr[30:25],in_fetcher_instr[11:7]};
+                    case(funct3) 
+                        3'b000:begin    out_lsb_op = `SB;    out_rob_op = `SB; end
+                        3'b001:begin    out_lsb_op = `SH;    out_rob_op = `SH; end
+                        3'b010:begin    out_lsb_op = `SW;    out_rob_op = `SW; end
+                    endcase
                 end
-                AI_TYPE : begin
+                AI_TYPE:begin 
+                    out_rob_destination = {27'b0,rd[4:0]};
+                    out_rs_rob_tag = in_rob_freetag;
+                    out_rs_value1 = value1;
+                    out_rs_tag1 = tag1;
+                    out_rs_imm = {{21{in_fetcher_instr[31]}},in_fetcher_instr[30:20]};
+                    out_reg_destination = rd;
+                    case(funct3) 
+                        3'b000:begin    out_rs_op = `ADDI;    out_rob_op = `ADDI; end
+                        3'b010:begin    out_rs_op = `SLTI;    out_rob_op = `SLTI; end
+                        3'b011:begin    out_rs_op = `SLTIU;   out_rob_op = `SLTIU; end
+                        3'b100:begin    out_rs_op = `XORI;    out_rob_op = `XORI; end
+                        3'b110:begin    out_rs_op = `ORI;     out_rob_op = `ORI; end
+                        3'b111:begin    out_rs_op = `ANDI;    out_rob_op = `ANDI; end
+                        3'b001:begin 
+                            out_rs_op = `SLLI;
+                            out_rob_op = `SLLI;
+                            out_rs_imm = {26'b0,in_fetcher_instr[25:20]};
+                        end
+                        3'b101:begin 
+                            out_rs_imm = {26'b0,in_fetcher_instr[25:20]};
+                            case(funct7)
+                                7'b0000000:begin out_rs_op = `SRLI; out_rob_op = `SRLI; end
+                                7'b0100000:begin out_rs_op = `SRAI; out_rob_op = `SRAI; end
+                            endcase
+                        end
+                    endcase
                 end
-                R_TYPE : begin
+                R_TYPE:begin 
+                    out_rob_destination = {27'b0,rd[4:0]};
+                    out_rs_rob_tag = in_rob_freetag;
+                    out_rs_value1 = value1;
+                    out_rs_tag1 = tag1;
+                    out_rs_value2 = value2;
+                    out_rs_tag2 = tag2;
+                    out_reg_destination = rd;
+                    case(funct3)
+                        3'b000:begin 
+                            case(funct7)
+                                7'b0000000:begin out_rs_op = `ADD; out_rob_op = `ADD; end
+                                7'b0100000:begin out_rs_op = `SUB; out_rob_op = `SUB; end
+                            endcase
+                        end
+                        3'b001:begin out_rs_op = `SLL; out_rob_op = `SLL; end
+                        3'b010:begin out_rs_op = `SLT; out_rob_op = `SLT; end
+                        3'b011:begin out_rs_op = `SLTU; out_rob_op = `SLTU; end
+                        3'b100:begin out_rs_op = `XOR; out_rob_op = `XOR; end
+                        3'b101:begin 
+                            case(funct7)
+                                7'b0000000:begin out_rs_op = `SRL; out_rob_op = `SRL; end
+                                7'b0100000:begin out_rs_op = `SRA; out_rob_op = `SRA; end
+                            endcase
+                        end
+                        3'b110:begin out_rs_op = `OR; out_rob_op = `OR; end
+                        3'b111:begin out_rs_op = `AND; out_rob_op = `AND; end
+                    endcase
                 end
             endcase
         end
     end
-endmodule
+    endmodule

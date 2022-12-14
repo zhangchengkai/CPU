@@ -19,7 +19,7 @@
 `define REG_SIZE      32
 `define ZERO_TAG_REG   5`b0
 `define ZERO_TAG_ROB   4`b0
-`define ZREO_TAG_RS    4`b0
+`define ZERO_TAG_RS    4`b0
 `define ZERO_TAG_LSB   4`b0
 `define ROB_SIZE      16
 `define RS_SIZE       16

@@ -9,7 +9,7 @@ module fetcher(
     output reg out_mem_ce,
     output reg [`DATA_WIDTH] out_mem_pc,
     
-    //Get from memCtrl
+    //Get instructions from memCtrl
     input in_mem_ce,
     input [`DATA_WIDTH] in_mem_instr,
 
@@ -23,7 +23,7 @@ module fetcher(
     input in_slb_idle,
     input in_rob_idle,
 
-    //? store entry
+    //enable SLB/RS to store instruction 
     output out_store_ce,
 
     //misbranch from rob
@@ -32,7 +32,7 @@ module fetcher(
 
     //communicata with BP
     output [`BP_TAG_WIDTH] out_bp_tag,
-    input in_bp_tag
+    input in_bp_jump_ce
 );
     //idle or waiting
     localparam IDLE      = 2`b0,
@@ -73,7 +73,7 @@ module fetcher(
                     if(icache_valid[pc[`ICACHE_INDEX_WIDTH]] == `TRUE && icache_tag[pc[`ICACHE_INDEX_WIDTH]] == pc[`ICACHE_TAG_WIDTH]) begin
                         out_instr <= icache_instr[`ICACHE_INDEX_WIDTH];
                         out_pc <= pc;
-                        if(next_idle == `TRUE) begin
+                        if(next_idle == `TRUE) begin //instruction passed successfully: new pc
                             out_store_ce <= `TRUE;
                             status <= IDLE;
                             if(icache_instr[pc[`ICACHE_INDEX_WIDTH]][`OPCODE_WIDTH] == 7`b1101111) begin //JAL
