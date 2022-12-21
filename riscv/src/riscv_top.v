@@ -159,7 +159,7 @@ assign cpumc_din    = (hci_active) ? hci_ram_dout    : cpu_ram_dout;
 
 // Fixed 2020-10-06: Inconsisitency of return value with I/O state
 always @ (posedge clk) begin
-     $display("weofjweijp\n");
+    //  $display("weofjweijp\n");
     q_hci_io_en <= hci_io_en;
 end
 

@@ -12,11 +12,11 @@ module register(
     input [`REG_TAG_WIDTH] in_decode_reg_tag1,
     output [`DATA_WIDTH] out_decode_value1,
     output [`ROB_TAG_WIDTH] out_decode_rob_tag1,
-    output out_deocde_busy1,
+    output out_decode_busy1,
     input [`REG_TAG_WIDTH] in_decode_reg_tag2,
     output [`DATA_WIDTH] out_decode_value2,
     output [`ROB_TAG_WIDTH] out_decode_rob_tag2,
-    output out_deocde_busy2,
+    output out_decode_busy2,
 
     //updates from decode
     input [`REG_TAG_WIDTH] in_decode_destination_reg,
@@ -41,12 +41,17 @@ module register(
     assign out_decode_rob_tag2 = tags[in_decode_reg_tag2];
     assign out_decode_busy2 = busy[in_decode_reg_tag2];
 
+        integer i;
     always @(posedge clk) begin
         if(rst == `TRUE) begin
             values[0] <= `ZERO_DATA;
             busy[0] <= `FALSE;
             tags[0] <= `ZERO_TAG_ROB;
         end
+        // for(i=0;i<`REG_SIZE;i=i+1) begin
+        //     $write("%d",tags[i]);
+        // end
+        // $display("");
     end
 
     genvar k;

@@ -110,6 +110,11 @@ module memCtrl(
             wait_uart <= 0;
             io_flag <= `FALSE;
         end else if(rdy == `TRUE) begin
+            // if(status == IDLE) $display("memCtrl status : IDLE");
+            // if(status == FETCHER_READ) $display("memCtrl status : FETCHER_READ");
+            // if(status == SLB_READ) $display("memCtrl status : SLB_READ");
+            // if(status == ROB_WRITE) $display("memCtrl status : ROB_WRITE");
+            // if(status == IO_READ) $display("memCtrl status : IO_READ");
             if(in_rob_misbranch == `FALSE || status == ROB_WRITE) begin
                 if(in_rob_misbranch == `TRUE) begin
                     fetcher_flag <= `FALSE;
@@ -223,9 +228,8 @@ module memCtrl(
                                             out_data[7:0] <= in_ram_data;
                                     end
                                     3 : begin
-                                        if(in_slb_signed) begin
-                                            out_data <= in_ram_data[7:0];
-                                        end
+                                        if(in_slb_signed) begin out_data <= $signed({in_ram_data,out_data[7:0]}); end
+                                        else begin out_data <= {in_ram_data,out_data[7:0]}; end
                                         stages <= 1;
                                         slb_flag <= `FALSE;
                                         out_slb_ce <= `TRUE;
@@ -289,7 +293,7 @@ module memCtrl(
                                 stages <= 1;
                                 fetcher_flag <= `FALSE;
                                 out_fetcher_ce <= `TRUE;
-                                if(wb_is_empty == `TRUE) begin
+                                if(wb_is_empty == `FALSE) begin
                                     status <= ROB_WRITE;
                                     out_ram_address <= `ZERO_DATA;
                                 end else if(slb_flag == `TRUE) begin

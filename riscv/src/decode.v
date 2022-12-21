@@ -66,26 +66,26 @@ module decode(
     wire [4:0] rd;
     wire [2:0] funct3;
     wire [6:0] funct7;
-    parameter LUI     = 7'b0110111,
-              AUIPC   = 7'b0010111,
-              JAL     = 7'b1101111,
-              JALR    = 7'b1100111,
-              B_TYPE  = 7'b1100011,
-              LI_TYPE = 7'b0000011,
-              S_TYPE  = 7'b0100011,
-              AI_TYPE = 7'b0010011,
-              R_TYPE  = 7'b0110011;
+    parameter LUI     = 7'b0110111,//55
+              AUIPC   = 7'b0010111,//23
+              JAL     = 7'b1101111,//111
+              JALR    = 7'b1100111,//103
+              B_TYPE  = 7'b1100011,//99
+              LI_TYPE = 7'b0000011,//3
+              S_TYPE  = 7'b0100011,//35
+              AI_TYPE = 7'b0010011,//19
+              R_TYPE  = 7'b0110011;//51
               
     assign opcode = in_fetcher_instr[`OPCODE_WIDTH];
     assign funct3 = in_fetcher_instr[14:12];
-    assign funct7 = in_fetcher_instr[24:20];
+    assign funct7 = in_fetcher_instr[31:25];
     assign rd = in_fetcher_instr[11:7];
 
     //logic
     assign out_reg_tag1 = in_fetcher_instr[19:15];
     assign out_reg_tag2 = in_fetcher_instr[24:20];
     assign out_rob_fetch_tag1 = in_reg_robtag1;
-    assign out_rob_fetch_tag1 = in_reg_robtag2;
+    assign out_rob_fetch_tag2 = in_reg_robtag2;
     assign out_reg_rob_tag = in_rob_freetag;
     assign out_pc = in_fetcher_pc;
     assign out_rob_jump_ce = in_fetcher_jump_ce;
@@ -107,27 +107,29 @@ module decode(
                   (in_rob_fetch_ready2 == `TRUE) ? `ZERO_TAG_ROB : 
                   in_reg_robtag2;
     always @(*) begin
-        out_rob_destination <= `ZERO_TAG_REG;
-        out_rob_op <= `NOP;
-        out_rs_rob_tag <= `ZERO_TAG_ROB;
-        out_rs_op <= `NOP;
-        out_rs_imm <= `ZERO_DATA;
-        out_slb_op <= `NOP;
-        out_slb_imm <= `ZERO_DATA;
-        out_slb_rob_tag <= `ZERO_TAG_ROB;
-        out_reg_destination <= `ZERO_TAG_REG;
-        out_rs_value1 <= `ZERO_DATA;
-        out_rs_value2 <= `ZERO_DATA;
-        out_rs_tag1 <= `ZERO_TAG_ROB;
-        out_rs_tag2 <= `ZERO_TAG_ROB;
-        out_slb_value1 <= `ZERO_DATA;
-        out_slb_value2 <= `ZERO_DATA;
-        out_slb_tag1 <= `ZERO_TAG_ROB;
-        out_slb_tag2 <= `ZERO_TAG_ROB;
+        out_rob_destination = `ZERO_TAG_REG;
+        out_rob_op = `NOP;
+        out_rs_rob_tag = `ZERO_TAG_ROB;
+        out_rs_op = `NOP;
+        out_rs_imm = `ZERO_DATA;
+        out_slb_op = `NOP;
+        out_slb_imm = `ZERO_DATA;
+        out_slb_rob_tag = `ZERO_TAG_ROB;
+        out_reg_destination = `ZERO_TAG_REG;
+        out_rs_value1 = `ZERO_DATA;
+        out_rs_value2 = `ZERO_DATA;
+        out_rs_tag1 = `ZERO_TAG_ROB;
+        out_rs_tag2 = `ZERO_TAG_ROB;
+        out_slb_value1 = `ZERO_DATA;
+        out_slb_value2 = `ZERO_DATA;
+        out_slb_tag1 = `ZERO_TAG_ROB;
+        out_slb_tag2 = `ZERO_TAG_ROB;
 
         if(rst == `FALSE && rdy == `TRUE) begin 
+            // $display("opcode here : %d",opcode);
             case (opcode)
                 LUI:begin
+                    // $display("LUI");
                   out_rob_op = `LUI;
                   out_rob_destination = {27'b0,rd[4:0]};
                   out_rs_rob_tag = in_rob_freetag;
@@ -262,6 +264,7 @@ module decode(
                     endcase
                 end
             endcase
+            // $display("out_rob_op : %d",out_rob_op);
         end
     end
     endmodule

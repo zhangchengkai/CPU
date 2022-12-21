@@ -20,10 +20,10 @@
 `define ZERO_TAG_REG   5'b0
 `define ZERO_TAG_ROB   4'b0
 `define ZERO_TAG_RS    4'b0
-`define ZERO_TAG_LSB   4'b0
+`define ZERO_TAG_SLB   4'b0
 `define ROB_SIZE      16
 `define RS_SIZE       16
-`define LSB_SIZE      16
+`define SLB_SIZE      16
 `define JUMP_ENABLE   32'b1
 `define JUMP_DISABLE  32'b0
 `define ICACHE_SIZE   256

@@ -8,7 +8,7 @@ module slb(
     //
     input in_fetcher_ce,
 
-    output out_fetcher_ce,
+    output out_fetcher_isidle,
 
     //ins from decode
     input [`ROB_TAG_WIDTH] in_decode_rob_tag,
@@ -53,33 +53,33 @@ module slb(
 );
     localparam IDLE = 1'b0,WAIT_MEM = 1'b1;
     reg status; // 0 means idle ; 1 means waiting for memory
-    reg busy[(`LSB_SIZE-1):0];
+    reg busy[(`SLB_SIZE-1):0];
     reg [`SLB_TAG_WIDTH] head;
     reg [`SLB_TAG_WIDTH] tail;
-    reg [`ROB_TAG_WIDTH] tags [(`LSB_SIZE-1):0];
-    reg [`INSIDE_OPCODE_WIDTH] op [(`LSB_SIZE-1):0];
-    reg [`DATA_WIDTH] address [(`LSB_SIZE-1):0];
-    reg  address_ready [(`LSB_SIZE-1):0];
-    reg [`DATA_WIDTH] imms [(`LSB_SIZE-1):0];
-    reg [`DATA_WIDTH] value1 [(`LSB_SIZE-1):0];
-    reg [`DATA_WIDTH] value2 [(`LSB_SIZE-1):0];
-    reg [`ROB_TAG_WIDTH] value1_tag [(`LSB_SIZE-1):0];
-    reg [`ROB_TAG_WIDTH] value2_tag [(`LSB_SIZE-1):0];
-    wire ready_to_calculate_addr [(`LSB_SIZE-1):0];
+    reg [`ROB_TAG_WIDTH] tags [(`SLB_SIZE-1):0];
+    reg [`INSIDE_OPCODE_WIDTH] op [(`SLB_SIZE-1):0];
+    reg [`DATA_WIDTH] address [(`SLB_SIZE-1):0];
+    reg  address_ready [(`SLB_SIZE-1):0];
+    reg [`DATA_WIDTH] imms [(`SLB_SIZE-1):0];
+    reg [`DATA_WIDTH] value1 [(`SLB_SIZE-1):0];
+    reg [`DATA_WIDTH] value2 [(`SLB_SIZE-1):0];
+    reg [`ROB_TAG_WIDTH] value1_tag [(`SLB_SIZE-1):0];
+    reg [`ROB_TAG_WIDTH] value2_tag [(`SLB_SIZE-1):0];
+    wire ready_to_calculate_addr [(`SLB_SIZE-1):0];
     wire [`SLB_TAG_WIDTH] calculate_tag;
-    wire ready_to_issue [(`LSB_SIZE-1):0];
+    wire ready_to_issue [(`SLB_SIZE-1):0];
     wire [`SLB_TAG_WIDTH] nextPtr;
     wire [`SLB_TAG_WIDTH] nowPtr;
 
     // Combinatorial logic
-    assign nextPtr = tail % (`LSB_SIZE-1) + 1; // 1 - 15 
-    assign nowPtr = head % (`LSB_SIZE-1) + 1;
+    assign nextPtr = tail % (`SLB_SIZE-1) + 1; // 1 - 15 
+    assign nowPtr = head % (`SLB_SIZE-1) + 1;
     assign out_fetcher_isidle = (nextPtr != head);
     assign out_rob_now_addr = address[nowPtr];
 
     genvar i;
     generate
-        for(i = 1;i < `LSB_SIZE;i=i+1) begin :BlockA
+        for(i = 1;i < `SLB_SIZE;i=i+1) begin :BlockA
             assign ready_to_issue[i] = (busy[i] == `TRUE) && (value2_tag[i] == `ZERO_TAG_ROB) && (address_ready[i] == `TRUE);
             assign ready_to_calculate_addr[i] = (busy[i] == `TRUE) && (value1_tag[i] == `ZERO_TAG_ROB) && (address_ready[i] == `FALSE);
         end
@@ -100,7 +100,7 @@ module slb(
                            ready_to_calculate_addr[13] ? 13 :
                            ready_to_calculate_addr[14] ? 14 :
                            ready_to_calculate_addr[15] ? 15 : 
-                           `ZERO_TAG_LSB;
+                           `ZERO_TAG_SLB;
 
     // Temporal logic
     integer j;
@@ -112,7 +112,7 @@ module slb(
             out_mem_ce <= `FALSE;
             out_mem_address <= `ZERO_DATA;
             out_ioin <= `FALSE;
-            for(j = 0;j < `LSB_SIZE;j=j+1) begin 
+            for(j = 0;j < `SLB_SIZE;j=j+1) begin 
                 busy[j] <= `FALSE;
                 address_ready[j] <= `FALSE;
                 address[j] <= `ZERO_DATA;
@@ -123,6 +123,8 @@ module slb(
             out_mem_ce <= `FALSE;
             out_destination <= `ZERO_DATA;
             out_ioin <= `FALSE;
+            // $display("-----------------------------------------------");
+            // $display("nowPtr = %d, op[nowPtr] = %d, address_ready[nowPtr] = %d,   %d  %d",nowPtr,op[nowPtr],address_ready[nowPtr],value1_tag[nowPtr],value2_tag[nowPtr]);
             if(ready_to_issue[nowPtr] == `TRUE) begin 
                 if(status == IDLE) begin 
                     case(op[nowPtr])
@@ -182,12 +184,13 @@ module slb(
                 end
             end 
             // Calculate effective address per cycle
-            if(calculate_tag != `ZERO_TAG_LSB) begin 
+            if(calculate_tag != `ZERO_TAG_SLB) begin 
                 address[calculate_tag] <= value1[calculate_tag] + imms[calculate_tag];
                 address_ready[calculate_tag] <= `TRUE;
             end
-            // Store new entry into LSB
+            // Store new entry into SLB
             if(in_fetcher_ce == `TRUE && in_decode_rob_tag != `ZERO_TAG_ROB && in_decode_op != `NOP) begin
+                // $display("SLB in op : %d",in_decode_op);
                 busy[nextPtr] <= `TRUE;
                 tail <= nextPtr;
                 tags[nextPtr] <= in_decode_rob_tag;
@@ -221,7 +224,7 @@ module slb(
                 end
             end
             
-            for(j = 1;j < `LSB_SIZE;j=j+1) begin 
+            for(j = 1;j < `SLB_SIZE;j=j+1) begin 
                 if(busy[j] == `TRUE) begin 
                     // Monitor ALU CDB
                     if(in_alu_cdb_tag != `ZERO_TAG_ROB) begin
@@ -265,7 +268,7 @@ module slb(
             out_mem_ce <= `FALSE;
             status <= IDLE;
             head <= 1;tail <=1;
-            for(j = 1;j < `LSB_SIZE;j=j+1) begin 
+            for(j = 1;j < `SLB_SIZE;j=j+1) begin 
                 busy[j] <= `FALSE;
                 address_ready[j] <= `FALSE;
                 address[j] <= `ZERO_DATA;

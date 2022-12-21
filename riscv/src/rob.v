@@ -1,4 +1,4 @@
-`include "constanr.v"
+`include "constant.v"
 module rob(
     input clk,
     input rst,
@@ -94,7 +94,7 @@ module rob(
     assign nextPtr = tail % (`ROB_SIZE - 1) + 1;
     assign nowPtr = head % (`ROB_SIZE - 1) + 1;
     assign out_decode_idle_tag = (nextPtr == head) ? `ZERO_TAG_ROB : nextPtr;
-    assign out_fetcher_isidle = (nextPtr != head) && ((nextPtr % (`ROB_SIZE - 1) != head));
+    assign out_fetcher_isidle = (nextPtr != head) && ((nextPtr % (`ROB_SIZE - 1) + 1 != head));
     assign out_decode_fetch_value1 = value[in_decode_fetch_tag1];
     assign out_decode_fetch_value2 = value[in_decode_fetch_tag2];
     assign out_decode_fetch_ready1 = ready[in_decode_fetch_tag1];
@@ -132,6 +132,7 @@ module rob(
                 isIOread[i] <= `FALSE;
             end
         end else if(rdy == `TRUE && out_misbranch == `FALSE) begin
+            // $display("ROB here %d %d\n",in_fetcher_ce,in_decode_op);
             out_rob_tag <= `ZERO_TAG_ROB;
             out_reg_index <= `ZERO_TAG_REG;
             out_mem_ce <= `FALSE;
@@ -143,6 +144,7 @@ module rob(
                 predictions[nextPtr] <= in_decode_jump_ce;
                 destination[nextPtr] <= in_decode_destination;
                 op[nextPtr] <= in_decode_op;
+                // $display("ROB in op : %d",in_decode_op);
                 case(in_decode_op)
                     `SB,`SH,`SW : begin
                         isStore[nextPtr] <= `TRUE;
@@ -172,16 +174,18 @@ module rob(
             //commit
             if(ready[nowPtr] == `TRUE && head != tail) begin
                 if(status == IDLE) begin
+                    // $display("commit here op : %d",op[nowPtr]);
                     case(op[nowPtr])
                         `NOP : begin end
                         `JALR : begin
+
                             out_reg_index <= destination[nowPtr][`REG_TAG_WIDTH];
                             out_reg_rob_tag <= nowPtr;
                             out_reg_value <= value[nowPtr];
                             out_misbranch <= `TRUE;
                             out_newpc <= newpc[nowPtr];
                         end
-                        `BEQ,`BNE,`BGE,BLTU : begin
+                        `BEQ,`BNE,`BLT,`BGE,`BLTU,`BGEU: begin 
                             out_bp_ce <= `TRUE;
                             out_bp_jump_ce <= (value[nowPtr] == `JUMP_ENABLE) ? `TRUE : `FALSE;
                             out_bp_tag <= pcs[nowPtr][`BP_HASH_WIDTH];
@@ -224,7 +228,7 @@ module rob(
                             out_reg_rob_tag <= nowPtr;
                             out_reg_value <= value[nowPtr];
                             isStore[nowPtr] <= `FALSE;
-                            head <=nowPtr;
+                            head <= nowPtr;
                         end
                     endcase
                 end else if(status == WAIT_MEM) begin

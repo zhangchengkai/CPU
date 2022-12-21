@@ -179,13 +179,13 @@ module rs(
                                 value2_tag[i] <= `ZERO_TAG_ROB;
                             end
                         end
-                        if(in_lsb_cdb_tag != `ZERO_TAG_ROB && in_lsb_ioin == `FALSE) begin 
-                            if(value1_tag[i] == in_lsb_cdb_tag) begin 
-                                value1[i] <= in_lsb_cdb_value;
+                        if(in_slb_cdb_tag != `ZERO_TAG_ROB && in_slb_ioin == `FALSE) begin 
+                            if(value1_tag[i] == in_slb_cdb_tag) begin 
+                                value1[i] <= in_slb_cdb_value;
                                 value1_tag[i] <= `ZERO_TAG_ROB;
                             end
-                            if(value2_tag[i] == in_lsb_cdb_tag) begin 
-                                value2[i] <= in_lsb_cdb_value;
+                            if(value2_tag[i] == in_slb_cdb_tag) begin 
+                                value2[i] <= in_slb_cdb_value;
                                 value2_tag[i] <= `ZERO_TAG_ROB;
                             end
                         end

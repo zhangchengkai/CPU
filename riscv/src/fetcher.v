@@ -52,6 +52,7 @@ module fetcher(
 
     integer i;
     always@(posedge clk) begin
+        // $display($time," pc = %d ",pc);
         if(rst == `TRUE) begin
             status <= IDLE;
             pc <= `ZERO_DATA;
@@ -62,7 +63,6 @@ module fetcher(
                 icache_valid[i] <= `FALSE;
             end
         end else if(rdy == `TRUE) begin
-            $display($time," %d \n",pc);
             out_mem_ce <= `FALSE;
             out_store_ce <= `FALSE;
             if(in_rob_misbranch == `TRUE) begin
@@ -70,6 +70,7 @@ module fetcher(
                 pc <= in_rob_newpc;
             end else begin
                 if(status == IDLE) begin
+                    // $display("IDLE");
                     //cache hit
                     if(icache_valid[pc[`ICACHE_INDEX_WIDTH]] == `TRUE && icache_tag[pc[`ICACHE_INDEX_WIDTH]] == pc[`ICACHE_TAG_WIDTH]) begin
                         out_instr <= icache_instr[pc[`ICACHE_INDEX_WIDTH]];
@@ -108,6 +109,7 @@ module fetcher(
                         out_mem_pc <= pc;
                     end
                 end else if(status == WAIT_MEM) begin
+                    // $display("MWIT_MEM");
                     if(in_mem_ce == `TRUE) begin
                         out_instr <= in_mem_instr;
                         out_pc <= pc;
@@ -145,6 +147,7 @@ module fetcher(
                         end
                     end
                 end else if(status == WAIT_IDLE && next_idle == `TRUE) begin
+                    // $display("WAIT_IDLE");
                     out_store_ce <= `TRUE;
                     status <= IDLE;
                     if(out_instr[`OPCODE_WIDTH] == 7'b1101111) begin
