@@ -25,11 +25,11 @@ initial begin
   $finish;
 end
 
-initial begin
-     $dumpfile("test.vcd");
-     $dumpvars(0, testbench);
-     $display("weofjweijp\n");
-     #300000000 $finish;
-end
+// initial begin
+//      $dumpfile("test.vcd");
+//      $dumpvars(0, testbench);
+//      $display("testbench start here\n");
+//      #300000000 $finish;
+// end
 
 endmodule
